@@ -6,10 +6,12 @@ WSP's CarbonIQ screening for Frontier from open geological sources, adds a site
 table of existing ultramafic tailings, and runs a removal and cost model over
 both.
 
-**Status: internal to Frontier.** The repository is private because the viewer
-contains GRID-Arendal tailings facilities, Brazil SGB geology and supplier TEA
-calibration that need permission before wider publication (see `TODO.md`).
-Client and supplier documents are never committed.
+**Status: internal to Frontier, temporarily public for colleague feedback
+(2026-09-15).** The viewer and repo contain GRID-Arendal tailings facilities,
+Brazil SGB geology and supplier TEA calibration that need permission before
+wider publication (see `TODO.md`). Do not share the link beyond Frontier; the
+repo will be taken down or made private after the feedback round. Client and
+supplier source documents are never committed.
 
 Live map (GitHub Pages, deployed from `src/` on every push to `main`):
 https://hausfath.github.io/sm-map/

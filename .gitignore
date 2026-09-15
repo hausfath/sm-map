@@ -1,0 +1,30 @@
+# Raw inputs: downloaded, derived from, deleted. Never committed.
+data/raw/
+# Large derived rasters; regenerate with the scripts.
+data/processed/*.tif
+data/processed/*.npy
+data/processed/*.npz
+# WSP deliverables (client material, licensed S&P data inside). Never committed.
+SM_Indicators.gdb/
+WSP Final Results/
+# Python / macOS
+__pycache__/
+*.py[cod]
+.DS_Store
+scratch/
+
+# Regenerable large derived rasters (scripts/fetch_etopo_slope.sh, fetch_grip4_roads.sh)
+data/interim/slope_deg_x4_30s.tif
+data/interim/roads_*_0p01deg.tif
+
+# Client and supplier documents (Frontier, WSP, Arca, Anvil): never committed.
+*.docx
+*.xlsx
+*.pdf
+scripts/__pycache__/
+
+# Large regenerable interim products and WSP-derived validation rasters.
+data/interim/*.gpkg
+data/interim/wsp_validation/
+data/interim/.grip4_region*.done
+data/interim/*.log

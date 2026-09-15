@@ -1,0 +1,30 @@
+{
+ "built": "2026-09-10 16:44",
+ "n_sites": 32,
+ "n_tailings": 168,
+ "horizon_yr": 20,
+ "frontier_ref": 0.25,
+ "uptake_scenarios": {
+  "LOW": 0.01,
+  "CENTRAL": 0.03,
+  "HIGH": 0.08
+ },
+ "tiers": [
+  "FOAK",
+  "NOAK"
+ ],
+ "modes": [
+  "passive_pile",
+  "reactor_aerated",
+  "reactor_activated"
+ ],
+ "internal": true,
+ "publish_flags": {
+  "grid_arendal_tailings": "CC BY-NC-SA + no-derivatives; permission required",
+  "tea_internal": "supplier TEAs shared with Frontier; confidential",
+  "frontier_docs": "Frontier SM overview and Alkalinity POV are internal",
+  "brazil_sgb_1m": "SGB has no open-data plan; terms unresolved",
+  "snp_capital_iq_mines": "WSP-licensed commercial data",
+  "wsp_deliverables": "client material"
+ }
+}

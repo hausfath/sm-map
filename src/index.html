@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Surficial Mineralization Atlas (internal v0)</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<style>
+  :root { color-scheme: light;
+    --surface-1:#fcfcfb; --surface-2:#f0efec; --text-1:#0b0b0b; --text-2:#52514e; --text-3:#7a7974; --line:#dcdbd6;
+    --fp-high:#1c5cab; --fp-med:#5598e7; --fp-low:#b7d3f6; --fp-minor:#c9c8c2;
+    --trackA:#eb6834; --trackB:#4a3aa7; --tsf:#52514e; --warn:#d03b3b; }
+  html,body{height:100%;margin:0;font:14px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;color:var(--text-1);background:var(--surface-1)}
+  #app{display:grid;grid-template-columns:360px 1fr;height:100%}
+  #side{overflow:auto;border-right:1px solid var(--line);padding:16px 18px 24px;background:var(--surface-1)}
+  #map{height:100%}
+  h1{font-size:17px;margin:0 0 2px} .sub{color:var(--text-2);font-size:12.5px;margin:0 0 14px}
+  h2{font-size:12px;letter-spacing:.04em;text-transform:uppercase;color:var(--text-3);margin:18px 0 6px}
+  .row{display:flex;gap:8px;align-items:center;margin:6px 0}
+  select{font:inherit;padding:4px 6px;border:1px solid var(--line);border-radius:6px;background:#fff;color:var(--text-1)}
+  label.chk{display:flex;gap:8px;align-items:center;margin:4px 0;font-size:13px}
+  .hint{color:var(--text-2);font-size:12px;margin:2px 0 0}
+  .leg{display:flex;align-items:center;gap:8px;font-size:12.5px;margin:3px 0}
+  .sw{width:18px;height:12px;border-radius:2px;display:inline-block;border:1px solid rgba(0,0,0,.15)}
+  .dot{width:11px;height:11px;border-radius:50%;display:inline-block;border:1.5px solid #fff;box-shadow:0 0 0 1px rgba(0,0,0,.25)}
+  table{border-collapse:collapse;width:100%;font-size:12px;margin-top:6px}
+  th,td{text-align:left;padding:3px 4px;border-bottom:1px solid var(--line);vertical-align:top}
+  th{color:var(--text-3);font-weight:600} td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
+  tr.site{cursor:pointer} tr.site:hover{background:var(--surface-2)}
+  .badge{display:inline-block;padding:0 6px;border-radius:10px;font-size:11px;background:var(--surface-2);color:var(--text-2)}
+  .internal{background:#fff4e5;border:1px solid #f2c48d;color:#6b3d00;padding:6px 8px;border-radius:6px;font-size:12px;margin:10px 0}
+  .leaflet-popup-content{font-size:12.5px;line-height:1.4;margin:10px 12px;max-width:340px}
+  .leaflet-popup-content h3{margin:0 0 4px;font-size:14px} .leaflet-popup-content .k{color:var(--text-3)}
+  .leaflet-popup-content table{margin:6px 0} .leaflet-popup-content td{padding:1px 6px 1px 0;border:0}
+  .foot{color:var(--text-3);font-size:11.5px;margin-top:16px;border-top:1px solid var(--line);padding-top:8px}
+</style>
+</head>
+<body>
+<div id="app">
+  <aside id="side">
+    <h1>Surficial Mineralization Atlas</h1>
+    <p class="sub">Internal v0. Sites with existing ultramafic tailings, modelled removal and cost, over the mapped ultramafic footprint.</p>
+    <div class="internal">Internal to Frontier. Contains GRID-Arendal facilities, Brazil SGB geology and supplier TEA calibration that need permission before wider publication.</div>
+
+    <h2>Model view</h2>
+    <div class="row"><label for="mode" style="width:70px">System</label>
+      <select id="mode">
+        <option value="passive_pile">Passive pile</option>
+        <option value="reactor_aerated">Aerated, irrigated reactor</option>
+        <option value="reactor_activated" selected>Activated reactor (pre-treatment)</option>
+      </select></div>
+    <div class="row"><label for="scen" style="width:70px">Maturity</label>
+      <select id="scen"><option value="FOAK">First project (FOAK)</option><option value="NOAK" selected>Nth plant (NOAK)</option></select></div>
+    <p class="hint">Tiers follow the two supplier TEAs: FOAK uses their first-project columns, NOAK their nth-plant columns; each cost category is drawn between the Arca and Anvil values. Passive and aerated modes have no TEA and scale judgement ranges by tier.</p>
+    <p class="hint" id="mode-hint"></p>
+
+    <h2>Layers</h2>
+    <label class="chk"><input type="checkbox" id="chk-major" checked> Ultramafic footprint, major constituent</label>
+    <div style="padding-left:24px">
+      <div class="leg"><span class="sw" style="background:var(--fp-high)"></span> high confidence (1:50k to 1:250k maps)</div>
+      <div class="leg"><span class="sw" style="background:var(--fp-med)"></span> medium (1:500k to 1:1M)</div>
+      <div class="leg"><span class="sw" style="background:var(--fp-low)"></span> low (small-scale compilations only)</div>
+    </div>
+    <div style="padding-left:24px"><div class="leg"><span class="sw" style="background:#5598e7;opacity:.45"></span> ophiolite complex or ultramafic-suite domain (lighter fill; mantle share 15 to 60%)</div></div>
+    <label class="chk"><input type="checkbox" id="chk-minor"> Ultramafic as a lesser constituent (86 Mha, grey)</label>
+    <label class="chk"><input type="checkbox" id="chk-prov"> Ophiolite tectonic provinces (Hasterok 2022, dashed; locator only, not outcrop)</label>
+    <label class="chk"><input type="checkbox" id="chk-sites" checked> Sites</label>
+    <div style="padding-left:24px">
+      <div class="leg"><span class="dot" style="background:var(--trackA)"></span> Track A: existing tailings (circle area scales with tonnage; hollow = tonnage unknown)</div>
+      <div class="leg"><span class="dot" style="background:var(--trackB)"></span> Track B: greenfield or project</div>
+    </div>
+    <label class="chk"><input type="checkbox" id="chk-tsf"> Tailings facilities within 5 km of ultramafic (GRID-Arendal, internal)</label>
+
+    <h2>Sites, sorted by modelled cost</h2>
+    <p class="hint">Median $/tCO2 (P10 to P90 in the popup); uptake is gross tCO2 per tonne of feed at 20 years. The activated-reactor uptake is the TEA value (0.25 to 0.30 t/t); Frontier's 0.25 reference is shown in each popup.</p>
+    <table id="tbl"><thead><tr><th>Site</th><th class="num">tCO2/t</th><th class="num">$/tCO2</th><th class="num" title="share of Monte Carlo draws that are not net-negative">not net-neg.</th></tr></thead><tbody></tbody></table>
+
+    <div class="foot" id="foot"></div>
+  </aside>
+  <div id="map"></div>
+</div>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+const MODE_HINT = {
+  passive_pile: "Field-anchored brucite carbonation in an unmanaged pile; climate-adjusted. No mining or grinding cost for tailings.",
+  reactor_aerated: "Forced air and irrigation speed the approach to the same reactive-Mg ceiling; fan and pump electricity and water are charged; grid CO2 can flip the sign.",
+  reactor_activated: "Thermal or mechanochemical pre-treatment liberates bulk serpentine Mg (anchored to the Arca and Anvil TEAs, internal); electricity 200-400 kWh per tonne of feed."
+};
+const map = L.map('map', {worldCopyJump:true, minZoom:2}).setView([20, 10], 2);
+L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {maxZoom:12, opacity:0.55, attribution:'&copy; OpenStreetMap contributors'}).addTo(map);
+map.setMaxZoom(11); // mapping scale, not pixels, limits what can be read (README)
+
+const FP = {high:'#1c5cab', medium:'#5598e7', low:'#b7d3f6'};
+let mode = 'reactor_activated', scen = 'NOAK', sites = [], meta = {};
+const layers = {};
+
+function fpStyle(f){ const c = f.properties.conf; const cls = f.properties.um_class;
+  if (cls === 'ophiolite') return {color: FP[c] || FP.low, weight: 1.2, fillColor: FP[c] || FP.low, fillOpacity: 0.3};
+  return {color: FP[c] || FP.low, weight: cls === 'idonly' ? 1 : 0.5, dashArray: cls === 'idonly' ? '3 3' : null, fillColor: FP[c] || FP.low, fillOpacity: 0.7}; }
+function provStyle(){ return {color:'#4a3aa7', weight:1.5, dashArray:'6 4', fill:false}; }
+function minorStyle(){ return {color:'#a6a59f', weight:0.4, fillColor:'#c9c8c2', fillOpacity:0.35}; }
+function fpPopup(f, l){ const p=f.properties; l.bindPopup(`<h3>${p.um_rock ? p.um_rock.charAt(0).toUpperCase()+p.um_rock.slice(1) : 'Ultramafic footprint'}</h3><span class="k">dominant rock named in the source</span> ${p.um_rock||'—'}<br><span class="k">class</span> ${({major:'major constituent (35–85% ultramafic assumed)',minor:'lesser constituent (5–35%)',idonly:'harmonised ID only (25–80%)',ophiolite:'ophiolite / ultramafic-suite domain (15–60%)'})[p.um_class]||p.um_class} · <span class="k">confidence</span> ${p.conf}<br><span class="k">source</span> ${p.source}<br><span class="k">area in this source/class</span> ${p.Mha} Mha${p.publish===false||p.publish==='False'?'<br><b>Internal only: licence unresolved</b>':''}`); }
+
+fetch('data/footprint_major.geojson').then(r=>r.json()).then(g=>{ layers.major = L.geoJSON(g,{style:fpStyle,onEachFeature:fpPopup}).addTo(map); });
+fetch('data/footprint_minor.geojson').then(r=>r.json()).then(g=>{ layers.minor = L.geoJSON(g,{style:minorStyle,onEachFeature:fpPopup}); });
+fetch('data/ophiolite_provinces.geojson').then(r=>r.json()).then(g=>{ layers.prov = L.geoJSON(g,{style:provStyle,onEachFeature:(f,l)=>l.bindPopup(`<h3>${f.properties.name}</h3>Ophiolite-complex tectonic province (Hasterok et al. 2022, CC-BY 4.0). A locator for where ophiolite belts exist, not an outcrop map; not counted in any area.<br><span class="k">${f.properties.prov_ref||''}</span>`)}); });
+fetch('data/tailings_internal.geojson').then(r=>r.json()).then(g=>{
+  layers.tsf = L.geoJSON(g,{pointToLayer:(f,ll)=>L.circleMarker(ll,{radius:4,color:'#fff',weight:1,fillColor:'#52514e',fillOpacity:0.9}),
+    onEachFeature:(f,l)=>{const p=f.properties; l.bindPopup(`<h3>${p.mine||''} ${p.tsf?'· '+p.tsf:''}</h3><span class="k">owner</span> ${p.owner_company||''} · ${p.country}<br><span class="k">status</span> ${p.status} · <span class="k">stored</span> ${p.storage_m3?(p.storage_m3/1e6).toFixed(1)+' Mm³':'n/a'}<br><span class="k">nearest ultramafic unit</span> ${p.dist_km} km, ${p.conf} confidence: ${p.unit_name||''} (${(p.unit_lith||'').slice(0,80)})<br><b>GRID-Arendal, internal use only</b>`);}}); });
+
+const fmt = (v,d=0)=> v==null? '—' : Number(v).toLocaleString('en-US',{maximumFractionDigits:d,minimumFractionDigits:d});
+function res(s){ return (s.results[mode]||{})[scen] || {}; }
+function siteRadius(s){ if(!s.tonnage_mt) return 6; return Math.max(6, Math.min(26, 3*Math.log10(s.tonnage_mt*1e6/1e5)*2)); }
+function sitePopup(s){ const r=res(s), e=s.env; const rmg=s.reactive_mg_wt? `${s.reactive_mg_wt[0]}–${s.reactive_mg_wt[2]} wt% (central ${s.reactive_mg_wt[1]})`:'—';
+  return `<h3>${s.site}</h3><span class="k">${s.country} · ${s.track} · ${s.status||''}</span>
+  <table>
+  <tr><td class="k">feedstock</td><td>${s.feed_class_name}; reactive Mg ${rmg}</td></tr>
+  <tr><td class="k">tonnage</td><td>${s.tonnage_mt? fmt(s.tonnage_mt)+' Mt ('+s.tonnage_status+')':'unknown'}${s.tonnage_src?'<br><span class="k">'+s.tonnage_src+'</span>':''}</td></tr>
+  <tr><td class="k">${mode.replace('_',' ')}, ${scen}</td><td><b>${fmt(r.gross,3)} tCO2/t</b> gross at 20 yr (P10–P90 ${fmt(r.gross_p10,3)}–${fmt(r.gross_p90,3)}); Frontier reference 0.25</td></tr>
+  <tr><td class="k">cost</td><td><b>${r.cost!=null? '$'+fmt(r.cost)+'/tCO2':'not viable'}</b>${r.cost!=null?` (P10–P90 $${fmt(r.cost_p10)}–$${fmt(r.cost_p90)})`:''}; ${fmt(100*r.not_viable)}% of draws not net-negative</td></tr>
+  <tr><td class="k">removal</td><td>${r.removal_Mt!=null? fmt(r.removal_Mt,1)+' MtCO2 over the inventory (median)':'needs tonnage'}</td></tr>
+  <tr><td class="k">climate</td><td>${fmt(e.t_air_c,1)} °C mean, ${fmt(e.precip_mm)} mm/yr, slope ${fmt(e.slope_deg,1)}°</td></tr>
+  <tr><td class="k">grid</td><td>${fmt(e.grid_gco2_kwh)} gCO2/kWh <span class="k">(${e.grid_src})</span></td></tr>
+  <tr><td class="k">electricity</td><td>${e.elec_usd_per_mwh? '$'+fmt(e.elec_usd_per_mwh)+'/MWh <span class="k">('+e.elec_src+')</span>' : 'tier default range'}</td></tr>
+  <tr><td class="k">road</td><td>${fmt(e.road_km,1)} km to nearest GRIP4 road</td></tr>
+  <tr><td class="k">coordinates</td><td>${s.coord_status}</td></tr>
+  ${s.notes?`<tr><td class="k">notes</td><td>${s.notes.replace(/^\s*\|\s*/,'')}</td></tr>`:''}
+  </table>`; }
+function drawSites(){
+  if(layers.sites) map.removeLayer(layers.sites);
+  layers.sites = L.layerGroup(sites.map(s=>{ const A = s.track.startsWith('A');
+    const m = L.circleMarker([s.lat,s.lon],{radius:siteRadius(s),color:A?'#eb6834':'#4a3aa7',weight:2,fillColor:A?'#eb6834':'#4a3aa7',fillOpacity:s.tonnage_mt?0.75:0.15});
+    m.bindPopup(()=>sitePopup(s)); m._site=s; return m; }));
+  if(document.getElementById('chk-sites').checked) layers.sites.addTo(map);
+}
+function drawTable(){
+  const tb=document.querySelector('#tbl tbody'); tb.innerHTML='';
+  const rows = sites.map(s=>({s, r:res(s)})).sort((a,b)=>((a.r.cost==null)-(b.r.cost==null)) || (a.r.cost-b.r.cost));
+  for(const {s,r} of rows){ const tr=document.createElement('tr'); tr.className='site';
+    tr.innerHTML=`<td>${s.site}<br><span class="badge">${s.track.slice(0,1)}</span> <span class="k" style="color:var(--text-3)">${s.country}</span></td><td class="num">${fmt(r.gross,3)}</td><td class="num">${r.cost!=null?'$'+fmt(r.cost):'—'}</td><td class="num">${fmt(100*r.not_viable)}%</td>`;
+    tr.onclick=()=>{ map.setView([s.lat,s.lon], Math.max(map.getZoom(),6)); layers.sites.eachLayer(l=>{ if(l._site===s) l.openPopup(); }); };
+    tb.appendChild(tr); }
+}
+function refresh(){ document.getElementById('mode-hint').textContent = MODE_HINT[mode]; drawSites(); drawTable(); }
+Promise.all([fetch('data/sites.json').then(r=>r.json()), fetch('data/meta.json').then(r=>r.json())]).then(([s,m])=>{
+  sites=s; meta=m; refresh();
+  document.getElementById('foot').innerHTML = `Built ${m.built}. ${m.n_sites} sites, ${m.n_tailings} tailings facilities. Horizon ${m.horizon_yr} yr. Every parameter and source is in scripts/constants.py; uptake anchors: Diavik, Dumont, Mount Keith, Woodsreef, Thetford lab. Footprint from Macrostrat (CC-BY 4.0) plus Geoscience Australia, Georep New Caledonia, Quebec SIGEOM, USGS Africa and Brazil SGB (internal). Effective resolution is the mapping scale (5 to 50 km for most of the footprint), not the pixel.`;
+});
+document.getElementById('mode').onchange = e=>{ mode=e.target.value; refresh(); };
+document.getElementById('scen').onchange = e=>{ scen=e.target.value; refresh(); };
+document.getElementById('chk-major').onchange = e=> e.target.checked ? layers.major.addTo(map) : map.removeLayer(layers.major);
+document.getElementById('chk-minor').onchange = e=> e.target.checked ? layers.minor.addTo(map) : map.removeLayer(layers.minor);
+document.getElementById('chk-sites').onchange = e=> e.target.checked ? layers.sites.addTo(map) : map.removeLayer(layers.sites);
+document.getElementById('chk-prov').onchange = e=> e.target.checked ? layers.prov.addTo(map) : map.removeLayer(layers.prov);
+document.getElementById('chk-tsf').onchange = e=> e.target.checked ? layers.tsf.addTo(map) : map.removeLayer(layers.tsf);
+</script>
+</body>
+</html>

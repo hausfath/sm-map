@@ -1,0 +1,38 @@
+# Publish the viewer to GitHub Pages.
+#
+# Uploads only src/, so the live URL is hausfath.github.io/sm-map/ and every
+# path inside src/ is relative (index.html fetches data/*.json and *.geojson).
+# There is no build step: scripts/export_viewer.py writes src/data/ and those
+# files are committed, so Pages serves exactly what was tested locally with
+# scripts/serve.sh. Re-run the export and commit when the pipeline changes.
+name: Deploy map to Pages
+
+on:
+  push:
+    branches: [main]
+    paths: ['src/**', '.github/workflows/pages.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: src
+      - id: deployment
+        uses: actions/deploy-pages@v4
